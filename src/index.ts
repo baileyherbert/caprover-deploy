@@ -69,6 +69,11 @@ async function login(): Promise<string> {
 
 	const data = await response.json();
 
+	if (data.status === 1105) {
+		logger.error('The configured master password is incorrect');
+		throw new Error('Failed to log into CapRover with the configured master password');
+	}
+
 	if (data.status !== 100) {
 		logger.error('Received unexpected status code from CapRover:', data.status);
 		throw new Error('Failed to log into CapRover with the configured master password');
@@ -166,24 +171,32 @@ app.use('/', async (req, res, next) => {
 			}
 
 			if (appToken !== Environment.CAPROVER_PASSWORD) {
-				const masterToken = await login();
+				try {
+					const masterToken = await login();
 
-				if (!await getAppAuthorized(appName, appToken)) {
+					if (!await getAppAuthorized(appName, appToken)) {
+						return res.status(200).json({
+							status: 0,
+							description: `The provided app token is invalid or does not have permission to access "${appName}"`,
+						});
+					}
+
+					const token = createToken(appName, masterToken);
+					const response = {
+						status: 100,
+						data: {
+							token: 'd-' + token.token,
+						},
+					};
+
+					return res.status(200).json(response);
+				}
+				catch (error) {
 					return res.status(200).json({
 						status: 0,
-						description: `The provided app token is invalid or does not have permission to access "${appName}"`,
+						description: 'Server error, check the logs for more information',
 					});
 				}
-
-				const token = createToken(appName, masterToken);
-				const response = {
-					status: 100,
-					data: {
-						token: 'd-' + token.token,
-					},
-				};
-
-				return res.status(200).json(response);
 			}
 		}
 	}
