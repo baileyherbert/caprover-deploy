@@ -39,3 +39,21 @@ This is what the full deployment script would look like:
 export CAPROVER_ADMIN_DOMAIN_OVERRIDE=deploy
 caprover deploy -u deploy.demo.domain.com -a $APP_NAME -p $APP_NAME:$TOKEN
 ```
+
+## Using with GitHub Actions
+
+The following example can be placed inside the steps of a GitHub Actions workflow job. Despite authenticating with an
+app token, the workflow will receive the build logs and will know whether or not the deployment was successful.
+
+```yml
+- name: Install dependencies
+  run: npm i -g caprover
+
+- name: Deploy to server
+  run: caprover deploy -u deploy.demo.domain.com
+    env:
+      CAPROVER_ADMIN_DOMAIN_OVERRIDE: deploy
+      CAPROVER_PASSWORD: app-name:${{ secrets.CAPROVER_APP_TOKEN }}
+      CAPROVER_APP: app-name
+      CAPROVER_BRANCH: ${{ github.ref }}
+```
