@@ -23,6 +23,25 @@ function isMultipartRequest(req: Request) {
 	return contentTypeHeader && contentTypeHeader.indexOf('multipart') > -1;
 }
 
+function decryptPassword(password: string) {
+	if (password.startsWith('obfs:')) {
+		password = password.substring(5);
+	}
+	else {
+		return password;
+	}
+
+	const buffer = Buffer.from(password, 'base64');
+	const key = buffer.subarray(0, 256);
+	const passwordBuffer = buffer.subarray(256);
+
+	for (let i = 0; i < passwordBuffer.length; i++) {
+		passwordBuffer[i] ^= key[i % key.length];
+	}
+
+	return passwordBuffer.toString('utf8');
+}
+
 async function login(): Promise<string> {
 	const url = new URL('/api/v2/login', Environment.CAPROVER_URL);
 
@@ -35,7 +54,7 @@ async function login(): Promise<string> {
 			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify({
-			password: Environment.CAPROVER_PASSWORD,
+			password: decryptPassword(Environment.CAPROVER_PASSWORD),
 		}),
 	});
 
