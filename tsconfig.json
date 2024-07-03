@@ -1,0 +1,38 @@
+{
+	"compilerOptions": {
+		"outDir": "dist",
+
+		"module": "esnext",
+		"moduleResolution": "node",
+
+		"target": "esnext",
+
+		"declaration": true,
+		"declarationMap": false,
+		"sourceMap": true,
+
+		"downlevelIteration": true,
+		"esModuleInterop": true,
+		"experimentalDecorators": true,
+		"resolveJsonModule": true,
+
+		"alwaysStrict": true,
+		"strict": true,
+		"noEmitOnError": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noImplicitReturns": true,
+		"noImplicitOverride": true,
+		"importsNotUsedAsValues": "remove",
+		"forceConsistentCasingInFileNames": true,
+
+		"skipLibCheck": true,
+		"stripInternal": true,
+		"removeComments": false,
+
+		"newLine": "lf"
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": ["node_modules", "lib", "dist"]
+}
