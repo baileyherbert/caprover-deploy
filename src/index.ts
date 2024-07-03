@@ -127,48 +127,45 @@ function createAppDefinitionResponse(appName: string) {
 
 app.set('trust proxy', Environment.TRUSTED_PROXY);
 app.use('/', async (req, res, next) => {
+	if (!Environment.ALLOW_WEB_APP && !req.path.startsWith('/api/v2')) {
+		return res.status(404).send();
+	}
+
 	logger.info('%s %s from %s', req.method, req.url, req.ip);
 
 	if (req.method === 'POST' && req.path === '/api/v2/login') {
 		const input = req.body.password as string;
 
-		if (!input || !input.includes(':')) {
-			res.status(200).json({
-				status: 0,
-				description: 'Invalid password format, please use "appname:apptoken"',
-			});
+		if (input && input.includes(':')) {
+			const [appName, appToken] = input.split(':');
 
-			return;
-		}
-
-		const [appName, appToken] = input.split(':');
-
-		if (appName.includes('/') || appName.includes('\\')) {
-			return res.status(200).json({
-				status: 0,
-				description: 'Invalid app name format'
-			});
-		}
-
-		if (appToken !== Environment.CAPROVER_PASSWORD) {
-			const masterToken = await login();
-
-			if (!await getAppAuthorized(appName, appToken)) {
+			if (appName.includes('/') || appName.includes('\\')) {
 				return res.status(200).json({
 					status: 0,
-					description: `The provided app token is invalid or does not have permission to access "${appName}"`,
+					description: 'Invalid app name format'
 				});
 			}
 
-			const token = createToken(appName, masterToken);
-			const response = {
-				status: 100,
-				data: {
-					token: 'd-' + token.token,
-				},
-			};
+			if (appToken !== Environment.CAPROVER_PASSWORD) {
+				const masterToken = await login();
 
-			return res.status(200).json(response);
+				if (!await getAppAuthorized(appName, appToken)) {
+					return res.status(200).json({
+						status: 0,
+						description: `The provided app token is invalid or does not have permission to access "${appName}"`,
+					});
+				}
+
+				const token = createToken(appName, masterToken);
+				const response = {
+					status: 100,
+					data: {
+						token: 'd-' + token.token,
+					},
+				};
+
+				return res.status(200).json(response);
+			}
 		}
 	}
 
