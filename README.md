@@ -12,6 +12,8 @@ Create a new app from the CapRover dashboard called `deploy` or similar, and set
 `CAPROVER_PASSWORD` to the plain-text master password for CapRover. It is of course recommended to use a secure,
 randomly generated password rather than a personal one.
 
+> Don't want to store your password in plain-text? See the bottom of this file for how to protect it.
+
 Now deploy the `baileyherbert/caprover-deploy:latest` image from the deployment tab, and wait for the success message to
 appear in the app logs. The app is now up and running, and ready to proxy your deployments. No other configuration is
 necessary.
@@ -57,3 +59,39 @@ app token, the workflow will receive the build logs and will know whether or not
       CAPROVER_APP: app-name
       CAPROVER_BRANCH: ${{ github.ref }}
 ```
+
+## Using it as the root captain domain
+
+By setting the `ALLOW_WEB_APP` environment variable to `true`, the application will proxy the entire captain web app,
+rather than only the API. Depending on your situation and how you expose your web server to the public internet, this
+may allow you to replace the `captain` subdomain entirely.
+
+## Protecting the master password
+
+If you aren't comfortable storing your CapRover master password in the app's environment variables, you may optionally
+obfuscate it. Run the `node` command in your terminal to open a shell, and paste in the following obfuscator function:
+
+```js
+const obfs = (password) => {
+	const buffer = Buffer.from(password, 'utf8'), key = require('crypto').randomBytes(256);
+	for (let i = 0; i < buffer.length; i++) buffer[i] ^= key[i % key.length];
+	console.log('obfs:' + Buffer.concat([key, buffer]).toString('base64'));
+}
+```
+
+Then, call the function with your master password:
+
+```js
+obfs('password')
+```
+
+This will return an obfuscated version of the password, which will be a long base64-encoded string that looks something
+like below. Make sure to remove any surrounding quotes when you copy it.
+
+```
+obfs:BNEwCfV9Boh8QAnL+Y5IGMiRv6/YmBW1NtbbtFE640rgPidCNZuxFM2bwrNxsJxUdCXAs/P7ZUUcJeml9...
+```
+
+You can then paste this obfuscated password into the `CAPROVER_PASSWORD` environment variable. Though the password is
+still easily obtainable with server access, it cannot be accidentally viewed, and is not compromised even if the
+environment variables are shown in a screenshot or video.
