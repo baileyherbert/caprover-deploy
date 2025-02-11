@@ -6,6 +6,7 @@ export const Environment = Env.rules({
 	LOGGING_LEVEL: Env.schema.enum(LogLevel).optional(LogLevel.Information).allowPartial(),
 	CAPROVER_PASSWORD: Env.schema.string(),
 	CAPROVER_URL: Env.schema.string().optional('http://captain-captain:3000'),
+	DISABLE_SSL: Env.schema.boolean().optional(false),
 	ALLOW_WEB_APP: Env.schema.boolean().optional(false),
 	TRUSTED_PROXY: (value?: string) => {
 		if (typeof value === 'string' && value.length > 0) {

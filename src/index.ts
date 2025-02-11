@@ -20,6 +20,14 @@ const tokens = new Map<string, TokenData>();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+function makeHeaders(headers: Record<string, string>) {
+	if (!Environment.DISABLE_SSL) {
+		headers['X-Forwarded-Proto'] = 'https';
+	}
+
+	return headers;
+}
+
 function isMultipartRequest(req: Request) {
 	const contentTypeHeader = req.headers['content-type']
 	return contentTypeHeader && contentTypeHeader.indexOf('multipart') > -1;
@@ -52,10 +60,9 @@ async function login(): Promise<string> {
 
 	const response = await fetch(url, {
 		method: 'POST',
-		headers: {
+		headers: makeHeaders({
 			'Content-Type': 'application/json',
-			'X-Forwarded-Proto': 'https'
-		},
+		}),
 		body: JSON.stringify({
 			password: decryptPassword(Environment.CAPROVER_PASSWORD),
 		}),
@@ -91,11 +98,10 @@ async function getAppAuthorized(appName: string, appToken: string) {
 	const url = new URL(`/api/v2/user/apps/appData/${appName}?detached=1`, Environment.CAPROVER_URL);
 	const response = await fetch(url, {
 		method: 'POST',
-		headers: {
+		headers: makeHeaders({
 			'Content-Type': 'application/json',
 			'x-captain-app-token': appToken,
-			'X-Forwarded-Proto': 'https'
-		},
+		}),
 	});
 
 	if (!response.ok) {
