@@ -5,6 +5,7 @@ import express, { Request } from 'express';
 import httpProxy from 'express-http-proxy';
 import bodyParser from 'body-parser';
 import crypto from 'crypto';
+import fetch from 'node-fetch';
 
 const app = express();
 const proxy = httpProxy(Environment.CAPROVER_URL);
@@ -13,6 +14,7 @@ const proxyForMultipart = httpProxy(Environment.CAPROVER_URL, {
 	reqBodyEncoding: null,
 	parseReqBody: false
 });
+
 const tokens = new Map<string, TokenData>();
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -52,6 +54,7 @@ async function login(): Promise<string> {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+			'X-Forwarded-Proto': 'https'
 		},
 		body: JSON.stringify({
 			password: decryptPassword(Environment.CAPROVER_PASSWORD),
@@ -67,7 +70,7 @@ async function login(): Promise<string> {
 		throw new Error('Failed to log into CapRover with the configured master password');
 	}
 
-	const data = await response.json();
+	const data = await response.json() as any;
 
 	if (data.status === 1105) {
 		logger.error('The configured master password is incorrect');
@@ -91,7 +94,8 @@ async function getAppAuthorized(appName: string, appToken: string) {
 		headers: {
 			'Content-Type': 'application/json',
 			'x-captain-app-token': appToken,
-		}
+			'X-Forwarded-Proto': 'https'
+		},
 	});
 
 	if (!response.ok) {
@@ -100,7 +104,7 @@ async function getAppAuthorized(appName: string, appToken: string) {
 		return false;
 	}
 
-	const content = await response.json();
+	const content = await response.json() as any;
 
 	if (content.status === 1108) {
 		logger.info('Successfully authenticated app token for app:', appName);
@@ -192,6 +196,8 @@ app.use('/', async (req, res, next) => {
 					return res.status(200).json(response);
 				}
 				catch (error) {
+					logger.error(error);
+
 					return res.status(200).json({
 						status: 0,
 						description: 'Server error, check the logs for more information',
